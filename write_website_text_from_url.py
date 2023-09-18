@@ -1,0 +1,188 @@
+'''
+Author: Logan Maupin
+Date: 09/17/2023
+
+This python script is a collection of functions used to extract body
+text from a given url and write it to a text file. The text file can
+be written to from multiple websites. 
+'''
+import requests
+from bs4 import BeautifulSoup
+from datetime import datetime
+
+
+def extract_domain_from_website(url: str) -> str or None:
+    '''
+    This function will take a given url like www.google.com for example
+    '''
+    # Send an HTTP GET request to the URL
+    response = requests.get(url)
+
+    website_is_up = is_website_up(url)
+    if website_is_up:
+        soup = BeautifulSoup(response.text, "html.parser")
+        
+        # Search for meta tags with the "og:site_name" property
+        og_site_name_tag = soup.find("meta", attrs={"property": "og:site_name"})
+        
+        # Find the title tag and extract its text
+        title_tag = soup.find("title")
+
+        if og_site_name_tag:
+            website_name = og_site_name_tag.get("content")
+            return website_name.title()
+        
+        elif title_tag:
+            website_name = title_tag.text
+            return website_name.title()
+
+        else:
+            print("Website name not found in meta or title tags.")
+            return None
+
+def is_website_up(url: str) -> bool:
+    '''
+    This function pings the url's server to see if 
+    the website is up and running.
+
+    Parameters: 
+    url: any website url string you wish to test like google.com
+
+    Return: Bool - True if the website is up and running.
+    '''
+    response = requests.get(url)
+    return response.status_code == 200
+
+
+def extract_website_text(url: str) -> str:
+    '''
+    This function extracts the text from the given url using 
+    the requests and beautiful soup library. 
+
+    Parameters:
+    url: string of url name like google.com for example
+
+    Return: string of text from the url
+    '''
+    website_is_up = is_website_up(url)
+    if website_is_up:
+
+        # Send an HTTP GET request to the URL
+        response = requests.get(url)
+
+         # Parse the HTML content of the page using BeautifulSoup
+        soup = BeautifulSoup(response.text, "html.parser")
+
+        # Specify the elements to exclude (e.g., headers, 
+        # footers, ads) based on HTML tags, classes, or attributes
+        elements_to_exclude = ["header", "footer", "aside", 
+                               "script", "style"]
+    
+        for tag in elements_to_exclude:
+            for element in soup.find_all(tag):
+                element.extract()  # Remove the element from the soup
+        
+        # Extract all the text from the parsed HTML
+        return soup.get_text()
+    
+
+def build_header_string(url: str) -> str or None:
+    '''
+    This function takes the url and extracts the domain name from it,
+    i.e. google.com into Google, then it will add that to a formatted
+    header text string to add to the top of each file entry. 
+
+    Parameters:
+    url: any url string like 'google.com' for example.
+
+    Return: header string to add to the top of a 
+    text file with the domain name.
+    '''
+    website_is_up = is_website_up(url)
+    if not website_is_up:
+        return None
+    
+    website_name = extract_domain_from_website(url)
+    if website_name:
+        header_string_start = '-'*25 + '\n'
+        output_string = header_string_start + \
+        f'The following information is from {website_name}' 
+        return output_string
+    
+
+def user_input_txt_filename() -> str or None:
+    '''
+    This function is a while loop that asks the user whether or not
+    they wish to provide their own filename to write to or not.
+
+    Return: filename or None if no.
+    '''
+    while True:
+
+        # ask the user if they wish to provide a filename or not:
+        custom_filename_input = input("Do you wish to use a custom filename to write to? (y/n): ").lower()
+        if custom_filename_input not in ['y', 'n']:
+            continue
+
+        elif custom_filename_input == 'y':
+            custom_filename = input("Please input the filename you wish to use: ").strip()
+            
+            if '.txt' in custom_filename.lower():
+                return custom_filename
+            
+            else: 
+                custom_filename += '.txt'
+                return custom_filename
+        
+        elif custom_filename_input == 'n':
+            return None
+
+
+def write_text_to_file(text_to_write: str, text_filename: str, url: str) -> None:
+    '''
+    This function just writes what text you want to the text file.
+    Specifically it appends the text rather than overwriting the file.
+
+    Parameters: 
+    text_to_write: string of what text you want to write to the file
+    text_filename: string of what the text filename will be. like example.txt
+    url: string of url name you wish to write about like google.com
+
+    Return: None
+    '''
+    header_text = build_header_string(url)
+    # Create or open a text file and save the extracted text to it
+    with open(text_filename, "a", encoding="utf-8") as text_file:
+        text_file.write(header_text)
+        text_file.write(text_to_write)
+        print(f"Text extracted and saved to {text_filename}")
+
+
+def main():
+    '''
+    This function defines the order in which to use all the functions
+    as an example of how one would get the text and write it to a file.
+
+    Return: None
+    '''
+    # First let's define what our url will be, so we'll ask the user for it.
+    url = input('Please input the website url you wish to extract text from: \n')
+
+    # Extract the company name / url domain name from the website
+    # like Google from google.com for example
+    website_name = extract_domain_from_website(url)
+
+    website_body_text = extract_website_text(url)
+
+    text_filename = user_input_txt_filename()
+
+    if not text_filename:
+
+        text_filename = f'{website_name} - {datetime.date()}.txt'
+
+    write_text_to_file(website_body_text, text_filename, url)
+
+
+if __name__ == "__main__":
+    main()
+    
