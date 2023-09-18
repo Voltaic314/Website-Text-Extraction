@@ -11,6 +11,21 @@ from bs4 import BeautifulSoup
 from datetime import datetime
 
 
+def get_current_date_string() -> str:
+    '''
+    This function gets the current date string in mm/dd/yyyy format
+
+    Returns: date string in mm/dd/yyyy format
+    '''
+    # Get the current date and time
+    current_datetime = datetime.now()
+    
+    # Format the date as a string (e.g., "MM-DD-YYYY")
+    date_string = current_datetime.strftime("%m-%d-%Y")
+    
+    return date_string
+
+
 def extract_domain_from_website(url: str) -> str or None:
     '''
     This function will take a given url like www.google.com for example
@@ -83,8 +98,23 @@ def extract_website_text(url: str) -> str:
                 element.extract()  # Remove the element from the soup
         
         # Extract all the text from the parsed HTML
-        return soup.get_text()
+        return soup.get_text().strip()
     
+
+def remove_excess_whitespace(text_to_process: str) -> str:
+    '''
+    This function removes excess whitespace and needless blank lines
+    given some input text. It will return an output text string that 
+    is cleaned up.
+
+    Parameters: 
+    text_to_process: input_string to clean up like 'example\n\n\n'
+
+    Returns: output string without excess whitespace or blank lines.
+    '''
+    cleaned_text = "\n".join(line.strip() for line in text_to_process.splitlines() if line.strip())
+    return cleaned_text
+
 
 def build_header_string(url: str) -> str or None:
     '''
@@ -173,12 +203,15 @@ def main():
     website_name = extract_domain_from_website(url)
 
     website_body_text = extract_website_text(url)
+    website_body_text = remove_excess_whitespace(website_body_text)
 
     text_filename = user_input_txt_filename()
 
     if not text_filename:
 
-        text_filename = f'{website_name} - {datetime.date()}.txt'
+        current_date = get_current_date_string()
+
+        text_filename = f'{website_name} - {current_date}.txt'
 
     write_text_to_file(website_body_text, text_filename, url)
 
