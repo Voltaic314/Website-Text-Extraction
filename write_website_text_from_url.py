@@ -29,6 +29,12 @@ def get_current_date_string() -> str:
 def extract_domain_from_website(url: str) -> str or None:
     '''
     This function will take a given url like www.google.com for example
+
+    Parameters: 
+    url: the string of the url name you wish to pass in like 'google.com'
+
+    Return: str of website name like Google, 
+    or None if this function can't find it via the Title or Meta HTML tags.
     '''
     # Send an HTTP GET request to the URL
     response = requests.get(url)
