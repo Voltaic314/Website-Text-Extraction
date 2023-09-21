@@ -94,17 +94,14 @@ def extract_website_text(url: str) -> str:
          # Parse the HTML content of the page using BeautifulSoup
         soup = BeautifulSoup(response.text, "html.parser")
 
-        # Specify the elements to exclude (e.g., headers, 
-        # footers, ads) based on HTML tags, classes, or attributes
-        elements_to_exclude = ["header", "footer", "aside", 
-                               "script", "style"]
-    
-        for tag in elements_to_exclude:
-            for element in soup.find_all(tag):
-                element.extract()  # Remove the element from the soup
+           # Find all <p> (paragraph) tags in the HTML
+        paragraph_tags = soup.find_all("p")
         
-        # Extract all the text from the parsed HTML
-        return soup.get_text().strip()
+        # Extract the text from the paragraph tags and join them into one string
+        extracted_text = "\n".join(tag.get_text(strip=True) for tag in paragraph_tags)        
+        
+
+        return extracted_text
     
 
 def remove_excess_whitespace(text_to_process: str) -> str:
