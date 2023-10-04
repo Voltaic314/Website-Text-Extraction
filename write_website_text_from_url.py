@@ -9,6 +9,7 @@ be written to from multiple websites.
 import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
+from urllib.parse import urlparse
 
 
 def get_current_date_string() -> str:
@@ -26,41 +27,6 @@ def get_current_date_string() -> str:
     return date_string
 
 
-def extract_domain_from_website(url: str) -> str or None:
-    '''
-    This function will take a given url like www.google.com for example
-
-    Parameters: 
-    url: the string of the url name you wish to pass in like 'google.com'
-
-    Return: str of website name like Google, 
-    or None if this function can't find it via the Title or Meta HTML tags.
-    '''
-    # Send an HTTP GET request to the URL
-    response = requests.get(url)
-
-    website_is_up = is_website_up(url)
-    if website_is_up:
-        soup = BeautifulSoup(response.text, "html.parser")
-        
-        # Search for meta tags with the "og:site_name" property
-        og_site_name_tag = soup.find("meta", attrs={"property": "og:site_name"})
-        
-        # Find the title tag and extract its text
-        title_tag = soup.find("title")
-
-        if og_site_name_tag:
-            website_name = og_site_name_tag.get("content")
-            return website_name.title()
-        
-        elif title_tag:
-            website_name = title_tag.text
-            return website_name.title()
-
-        else:
-            print("Website name not found in meta or title tags.")
-            return None
-
 def is_website_up(url: str) -> bool:
     '''
     This function pings the url's server to see if 
@@ -73,6 +39,26 @@ def is_website_up(url: str) -> bool:
     '''
     response = requests.get(url)
     return response.status_code == 200
+
+
+def extract_domain_from_website(url: str) -> str or None:
+    '''
+    This function will take a given url like www.google.com for example
+
+    Parameters: 
+    url: the string of the url name you wish to pass in like 'google.com'
+
+    Return: str of website host name like google.com
+    '''
+
+    website_is_up = is_website_up(url)
+    if website_is_up:
+        parsed_url = urlparse(url=url)
+        if parsed_url:
+            return parsed_url.hostname
+
+        else:
+            print("Website name not found.")
 
 
 def extract_website_text(url: str) -> str:
