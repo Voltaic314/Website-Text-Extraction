@@ -61,6 +61,21 @@ def extract_domain_from_website(url: str) -> str or None:
             print("Website name not found.")
 
 
+def remove_excess_whitespace(text_to_process: str) -> str:
+    '''
+    This function removes excess whitespace and needless blank lines
+    given some input text. It will return an output text string that 
+    is cleaned up.
+
+    Parameters: 
+    text_to_process: input_string to clean up like 'example\n\n\n'
+
+    Returns: output string without excess whitespace or blank lines.
+    '''
+    cleaned_text = "\n".join(line.strip() for line in text_to_process.splitlines() if line.strip())
+    return cleaned_text
+
+
 def extract_website_text(url: str) -> str:
     '''
     This function extracts the text from the given url using 
@@ -87,22 +102,8 @@ def extract_website_text(url: str) -> str:
         extracted_text = "\n".join(tag.get_text(strip=True) for tag in paragraph_tags)        
         
 
-        return extracted_text
-    
+        return remove_excess_whitespace(extracted_text)
 
-def remove_excess_whitespace(text_to_process: str) -> str:
-    '''
-    This function removes excess whitespace and needless blank lines
-    given some input text. It will return an output text string that 
-    is cleaned up.
-
-    Parameters: 
-    text_to_process: input_string to clean up like 'example\n\n\n'
-
-    Returns: output string without excess whitespace or blank lines.
-    '''
-    cleaned_text = "\n".join(line.strip() for line in text_to_process.splitlines() if line.strip())
-    return cleaned_text
 
 
 def build_header_string(url: str) -> str or None:
@@ -177,6 +178,21 @@ def write_text_to_file(text_to_write: str, text_filename: str, url: str) -> None
         print(f"Text extracted and saved to {text_filename}")
 
 
+def write_text_to_txt_file_from_url(url: str) -> None:
+    '''
+    This is an alternative function you can use which will write the 
+    text from the url's </p> tags but using passed in url arguments
+    instead of user input. Better if you need to do this for a long list
+    of articles instead of one at a time. 
+    
+    Returns: None
+    '''
+    website_name = extract_domain_from_website(url=url)
+    website_body_text = extract_website_text(url)
+    text_filename = f'{website_name}.txt'
+    write_text_to_file(website_body_text, text_filename, url)
+
+
 def main():
     '''
     This function defines the order in which to use all the functions
@@ -192,15 +208,12 @@ def main():
     website_name = extract_domain_from_website(url)
 
     website_body_text = extract_website_text(url)
-    website_body_text = remove_excess_whitespace(website_body_text)
 
     text_filename = user_input_txt_filename()
 
     if not text_filename:
 
-        current_date = get_current_date_string()
-
-        text_filename = f'{website_name} - {current_date}.txt'
+        text_filename = f'{website_name}.txt'
 
     write_text_to_file(website_body_text, text_filename, url)
 
