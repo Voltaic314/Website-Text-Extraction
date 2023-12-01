@@ -6,7 +6,8 @@ This module contains the text file class object.
 from website import Website
 
 
-class TextFile():
+class TextFile:
+
 
     def __init__(self, filename='', url='') -> None:
 
