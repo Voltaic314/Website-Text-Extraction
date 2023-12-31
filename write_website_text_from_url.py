@@ -7,6 +7,7 @@ to write a text file to the current working directory with the <p> text from
 a website, with an option to summarize the data from chatGPT. 
 '''
 from text_file import TextFile
+from website import Website
     
 
 def user_input_txt_filename() -> str:
@@ -57,7 +58,7 @@ def get_yes_or_no(prompt: str) -> bool:
 
 
 def does_user_want_summary() -> bool:
-    summary_question = "Would you like this extraction to include a text summary from ChatGPT? (y/n) "
+    summary_question = "Would you like this extraction to include a text summary from AI? (y/n) "
     return get_yes_or_no(summary_question)
 
 
@@ -70,14 +71,20 @@ def main():
     This function defines the order in which to use all the functions
     as an example of how one would get the text and write it to a file.
     '''
-    custom_filename = user_input_txt_filename()
-    txt_file = TextFile(url=get_url(), filename=custom_filename)
-    
-    user_wants_summary = does_user_want_summary()
-    if user_wants_summary:
-        txt_file.add_summary_to_header()
+    website = Website(url = get_url())
 
-    txt_file.write_text_to_file()
+    custom_filename = user_input_txt_filename()
+    if not custom_filename:
+        custom_filename = website.domain_name + ".txt"
+
+    txt_file = TextFile(filename=custom_filename)
+
+    user_wants_summary = does_user_want_summary()
+    txt_file_header = website.setup_txt_file_header(user_wants_summary)
+    total_text_file_contents = txt_file_header + website.extracted_text
+
+
+    txt_file.write_text_to_file(total_text_file_contents)
 
 
 if __name__ == "__main__":

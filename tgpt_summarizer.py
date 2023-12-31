@@ -1,18 +1,18 @@
 '''
 Author: Logan Maupin
 
-This module utilizes the G4F (GPT 4 Free) library, with the gpt-3.5-turbo LLM
-for various purposes. In this specific repo, it will be used to summarize text
-from articles where we have extracted the </p> from. 
+This module houses the logic and class object extensions for the 
+tgpt library that uses LLaMA AI from FB for website text summaries
+and special prompts. :) 
 '''
-import g4f
+from tgpt2 import TGPT
 from time import sleep
 
-
-class ChatGPT:
+class TGPTSummarizer(TGPT):
 
     def __init__(self, nick_name='') -> None:
-        self.model = "gpt-3.5-turbo"
+        self.max_tokens = 2048 # max must be less than 4096
+        super().__init__(max_tokens=self.max_tokens)
 
         if nick_name:
             self.nick_name = nick_name
@@ -20,34 +20,6 @@ class ChatGPT:
         
         else:
             self.initial_prompt = ''
-
-    def ask(self, message: str) -> str:
-        '''
-        This function uses chat completion with the gpt-3.5-turbo model
-        to get a response from ChatGPT based on whatever input prompt 
-        (message) that you gave it. 
-
-        Parameters:
-        message: str - message prompt you wish to give the GPT model
-
-        Returns: str - response back from the AI.
-        '''
-        if self.initial_prompt:
-            message = self.initial_prompt + message
-
-        response = g4f.ChatCompletion.create(
-        model=self.model,
-        messages=[{"role": "user", "content": message}],
-        )
-        return response
-    
-    @staticmethod
-    def text_needs_to_be_broken(text) -> bool:
-        '''
-        text needs to be split apart if the character length is greater than
-        or equal to 20,000 characters. So it will return True if that's the case.
-        '''
-        return len(text) >= 150_000
 
     @staticmethod
     def break_up_text(text_to_break_apart: str) -> list[str]:
@@ -71,7 +43,30 @@ class ChatGPT:
                 word_list.append(element)
 
         return separated_list
-                    
+
+    def ask_ai(self, message: str) -> str:
+        '''
+        This function uses chat completion with the gpt-3.5-turbo model
+        to get a response from the AI based on whatever input prompt 
+        (message) that you gave it. 
+
+        Parameters:
+        message: str - message prompt you wish to give the GPT model
+
+        Returns: str - response back from the AI.
+        '''
+        if self.initial_prompt:
+            message = self.initial_prompt + message
+        response = self.chat(prompt=message)
+        return response
+    
+    @staticmethod
+    def text_needs_to_be_broken(text) -> bool:
+        '''
+        text needs to be split apart if the character length is greater than
+        or equal to 500 characters. So it will return True if that's the case.
+        '''
+        return len(text) >= 500
     
     def summarize_text(self, text_to_summarize, char_limit=0) -> str:
         '''
@@ -93,10 +88,11 @@ class ChatGPT:
 
         prompt = prompt + f"Here is the website's text: \n\n{text_to_summarize}\n\n"
 
-        prompt += """In your response, pretend I didn't ask you a question, 
+        prompt += """In your response, pretend I didn't ask_ai
+ you a question, 
 just give me only the summary text and nothing else. Thank you so much!"""
 
-        return self.ask(prompt)
+        return self.ask_ai(prompt)
     
     def summarize_text_separated(self, text_list: list[str], char_limit=0) -> str:
         prompt = 'Can you please summarize this website\'s text for me?\n'
@@ -107,7 +103,7 @@ just give me only the summary text and nothing else. Thank you so much!"""
         prompt += "Note: I can't send all the text at once so it will come in sections of 250 words at a time. I'll let you know once I've sent the last section! "
 
         prompt += "Please only summarize the website in your last response once I have sent the last section. Okay? "
-        first_response_without_any_text_sent_yet = self.ask(prompt)
+        first_response_without_any_text_sent_yet = self.ask_ai(prompt)
         responses = [first_response_without_any_text_sent_yet]
         for index, string in enumerate(text_list):
             if index == 0:
@@ -119,7 +115,7 @@ just give me only the summary text and nothing else. Thank you so much!"""
             else:
                 prompt = "Here is the next section: \n"
 
-            response = self.ask(prompt + string)
+            response = self.ask_ai(prompt + string)
             sleep(1) # primarily to help with rate limiting
             responses.append(response)
 
